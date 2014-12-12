@@ -21,6 +21,7 @@ from __future__ import print_function, division, absolute_import
 
 import io
 import os
+from os import path
 import string
 import datetime
 import shutil
@@ -29,11 +30,15 @@ import shutil
 import click
 import yaml
 
-RC_PATH = os.path.expanduser('~/newtex')
+pkg_dir = path.dirname(__file__)
+
+pkg_config_dir = path.join(pkg_dir, 'newtexrc')
+
+config_dir = path.expanduser('~/newtex')
 
 
 default_config = u"""---
-# newtex configuration file
+# newtex config file
 
 # Uncomment and replace with the path to your default bib file
 # master_bib_file: path/to/master_bib.bib
@@ -55,29 +60,29 @@ def write_file(filename, string):
     io.open(filename, 'w', encoding="utf-8").write(string)
 
 
-def no_configuration_path(configuration_path):
-    click.confirm('Setup configuration directory at ~/newtex?', abort=True)
+def no_config_dir(config_dir):
+    """Create the config path if it doesn't exist."""
+    click.confirm('Setup config directory at ~/newtex?', abort=True)
 
-    if not os.path.exists(RC_PATH):
-        os.mkdir(RC_PATH)
+    if not path.exists(config_path):
+        shutil.copytree(pkg_config_dir, config_path)
 
-    config_file = os.path.normpath("{RC_PATH}/config.yaml".format(
-        RC_PATH=RC_PATH))
+    config_file = path.join(config_path, 'config.yaml')
 
     today = datetime.date.today().isoformat()
 
     write_file(config_file, default_config.format(date=today))
 
-    raise click.ClickException(
-        'Please setup your configuration file (~/newtex/config.yaml)')
+    click.echo('Please setup your config file (~/newtex/config.yaml)')
+    raise click.Abort()
 
 
-def check_configuration_file(config):
+def check_config(config):
     expected_keys = {'master_bib_file', 'authors', 'affiliations'}
     for key, val in config.items():
         if val is None:
             raise click.ClickException(
-                "The configuration parameter '{key}' must be specified.".format(
+                "The config parameter '{key}' must be specified.".format(
                     key=key))
 
     for key in expected_keys:
@@ -88,23 +93,31 @@ def check_configuration_file(config):
 
     if not keys_okay:
         raise click.ClickException(
-            "Please fix your configuration file before proceding")
+            "Please fix your config file before proceding")
 
 
 @click.command()
-@click.option('--folder-name', prompt='What should the folder be called?')
+@click.option('--folder-name', prompt='What should the folder be called?', type=click.Path(file_okay=False))
 @click.option('--title', prompt="What is the document's title?")
 def cli(folder_name, title):
-    config_file = os.path.normpath(
+    config_file = path.join(config_dir, 'config.yaml')
 
-        "{RC_PATH}/config.yaml".format(RC_PATH=RC_PATH))
-
-    if not os.path.exists(RC_PATH) or not os.path.exists(config_file):
-        no_configuration_path(RC_PATH)
+    if not path.exists(config_dir) or not path.exists(config_file):
+        no_config_dir(config_dir)
 
     config = yaml.load(io.open(config_file))
 
-    check_configuration_file(config)
+    check_config(config)
+
+    # Where to copy all of the files
+    doc_dir = path.abspath(folder_name)
+
+    shutil.copytree(config_dir, doc_dir)
+
+    # Copy master bib file
+    shutil.copy(path.abspath(config['master_bib_file']),
+                path.join(doc_dir, 'refs/'))
+
 
     click.echo("Folder name:  {folder_name}".format(folder_name=folder_name))
     click.echo("Title      :  {title}".format(title=title))
@@ -171,7 +184,7 @@ tex_file_template = string.Template(r"""%  $title
 \newcommand{\figloc}[1]{./figs/#1}   % Define subdirectory for figs
 \newcommand{\bibloc}[1]{./refs/#1}   % Define subdirectory for bib figures
 \newcommand{\trimcaptionspacing}{\vspace{-0.25in}}      % include in figures to decrease the text-to-figure spacing
-\newcommand{\trimcaptionspacinghalf}{\vspace{-0.10in}}  % include in figures to decrease the text-to-figure spacing         
+\newcommand{\trimcaptionspacinghalf}{\vspace{-0.10in}}  % include in figures to decrease the text-to-figure spacing
 \def\bibfont{\footnotesize} % Smaller font in the bibliography
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -226,63 +239,6 @@ This is the body.
 author_affil_temp = string.Template(r"""\
     \author{$author}
     \affiliation{$affiliation}""")
-
-
-gitignore = """
-# IGNORE LATEX WORKING FILES
-
-*.aux
-*.bak
-*.bbl
-*.blg
-*.dvi
-*.fgx
-*.log
-*.out
-*.pdf
-*.synctex.gz
-*.sav
-*.spl
-*.tbx
-*.vdx
-
-# IGNORE Latexmk
-*.fdb_latexmk
-*.fls
-
-
-*.mp
-*.top
-*.tui
-
-# IGNORE MATLAB data and MATHEMATICA and ADOBE ILLUDSTRATOR
-
-# ignore matlab temp asv backup files
-**.asv
-# ignore matlab temporary backup files
-**.m~
-# ignore matlab binary data
-**.mat
-# ignore Mathematica notebook files ...
-**.nb
-# ignore Adobe Illustrator
-**.ai
-
-# IGNORE MS WORD
-
-**.doc
-
-# ANNOYING FILES
-
-# A hidden file created by the Mac OS X Finder.
-**.DS_Store
-# Another annoying hidden file
-**.dropbox
-# Another annoying file
-Icon?
-# Ignore shortcuts
-**.lnk
-"""
 
 
 def tex_contents(title, date, authors, affiliations,
