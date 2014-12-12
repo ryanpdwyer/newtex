@@ -1,2 +1,3 @@
 include versioneer.py
 include newtex/_version.py
+exclude .gitignore

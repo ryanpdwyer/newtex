@@ -16,43 +16,99 @@ figs/
 
 Naming convention: Keep it short!
     YR[TYPE]_[INITIALS]_[SHORT TITLE]
-
-
-
-master_bib_file: PATH
-
-authors:
-    - Ryan P. Dwyer
-    - John A. Marohn
-affiliations:
-    - Department of Chemistry and Chemical Biology, Ithaca NY 14853
-    - Department of Chemistry and Chemical Biology, Ithaca NY 14853
-
-
-
 """
 from __future__ import print_function, division, absolute_import
 
+import io
 import os
 import string
 import datetime
+import shutil
 
 
 import click
 import yaml
 
-RC_PATH = os.path.expanduser('~/.newtex.yaml')
+RC_PATH = os.path.expanduser('~/newtex')
+
+
+default_config = u"""---
+# newtex configuration file
+
+# Uncomment and replace with the path to your default bib file
+# master_bib_file: path/to/master_bib.bib
+
+# Uncomment and correct the authors and affiliations list
+authors:
+#    - Your Name
+#    - John A. Marohn
+affiliations:
+#    - Department of Chemistry and Chemical Biology, Ithaca NY 14853
+#    - Department of Chemistry and Chemical Biology, Ithaca NY 14853
+
+
+created: {date}
+"""
+
+
+def write_file(filename, string):
+    io.open(filename, 'w', encoding="utf-8").write(string)
+
+
+def no_configuration_path(configuration_path):
+    click.confirm('Setup configuration directory at ~/newtex?', abort=True)
+
+    if not os.path.exists(RC_PATH):
+        os.mkdir(RC_PATH)
+
+    config_file = os.path.normpath("{RC_PATH}/config.yaml".format(
+        RC_PATH=RC_PATH))
+
+    today = datetime.date.today().isoformat()
+
+    write_file(config_file, default_config.format(date=today))
+
+    raise click.ClickException(
+        'Please setup your configuration file (~/newtex/config.yaml)')
+
+
+def check_configuration_file(config):
+    expected_keys = {'master_bib_file', 'authors', 'affiliations'}
+    for key, val in config.items():
+        if val is None:
+            raise click.ClickException(
+                "The configuration parameter '{key}' must be specified.".format(
+                    key=key))
+
+    for key in expected_keys:
+        keys_okay = True
+        if key not in config:
+            click.echo('{key} must be specified.'.format(key=key))
+            keys_okay = False
+
+    if not keys_okay:
+        raise click.ClickException(
+            "Please fix your configuration file before proceding")
 
 
 @click.command()
-def cli():
-    if not os.path.exists(RC_PATH):
-        click.confirm('Setup configuration file?', abort=True)
-    click.echo("Hello, World!")
+@click.option('--folder-name', prompt='What should the folder be called?')
+@click.option('--title', prompt="What is the document's title?")
+def cli(folder_name, title):
+    config_file = os.path.normpath(
 
+        "{RC_PATH}/config.yaml".format(RC_PATH=RC_PATH))
 
-def configure():
-    pass
+    if not os.path.exists(RC_PATH) or not os.path.exists(config_file):
+        no_configuration_path(RC_PATH)
+
+    config = yaml.load(io.open(config_file))
+
+    check_configuration_file(config)
+
+    click.echo("Folder name:  {folder_name}".format(folder_name=folder_name))
+    click.echo("Title      :  {title}".format(title=title))
+
 
 
 tex_file_template = string.Template(r"""%  $title

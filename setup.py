@@ -25,6 +25,7 @@ setup(
     author_email='ryanpdwyer@gmail.com',
     url='https://github.com/ryanpdwyer/newtex',
     packages=['newtex'],
+    setup_requires=["setuptools_git >= 0.3"],
     include_package_data=True,
     install_requires=['click', 'PyYAML'],
     tests_require=['nose>=1.0'],
