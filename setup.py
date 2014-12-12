@@ -26,7 +26,7 @@ setup(
     url='https://github.com/ryanpdwyer/newtex',
     packages=['newtex'],
     include_package_data=True,
-    install_requires=['click'],
+    install_requires=['click', 'PyYAML'],
     tests_require=['nose>=1.0'],
     test_suite='nose.collector',
     license='MIT',
