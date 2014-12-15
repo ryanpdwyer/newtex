@@ -101,6 +101,7 @@ def no_config_dir(config_dir, config_file):
     write_file(str(config_file), default_config.format(date=today))
 
     click.echo('Please setup your config file\n{0}'.format(str(config_file)))
+    click.edit(filename=str(config_file))
     raise click.Abort()
 
 
@@ -125,11 +126,14 @@ def check_config(config):
         raise click.Abort()
 
 
-@click.command()
-@click.option('--folder-name', prompt='What should the folder be called?', type=click.Path(file_okay=False))
-@click.option('--title', prompt="What is the document's title?")
+@click.command(help="Create a new LaTeX document with references, etc")
+@click.option('--folder-name', default=None, type=click.Path(file_okay=False),
+              help="Document folder name; last folder is also doc filename (no spaces)")
+@click.option('--title', default=None, help="Document title")
 @click.option('--config-dir', default=config_dir)
 def cli(folder_name, title, config_dir):
+
+    # Configuration file setup, checking
     config_file = config_dir/'config.yaml'
 
     if not config_dir.exists() or not config_file.exists():
@@ -138,6 +142,16 @@ def cli(folder_name, title, config_dir):
     config = yaml.load(io.open(str(config_file)))
 
     check_config(config)
+
+    # Handle unset command line arguments
+    if folder_name is None:
+        folder_name = click.prompt('What should the folder be called?',
+                                   type=click.Path(file_okay=False))
+
+    if title is None:
+        title = click.prompt("What is the document's title?")
+
+    # Actual copying, renaming, inserting into template
 
     # Where to copy all of the files
     doc_dir = new_path(folder_name)
@@ -157,7 +171,6 @@ def cli(folder_name, title, config_dir):
     copy(master_bib, doc_dir/'refs'/master_bib.name)
 
     tex_file = doc_dir/'template.tex'
-    print(tex_file)
     # Use the template to update the tex doc
     tex_template = string.Template(io.open(str(tex_file)).read())
 
@@ -171,8 +184,12 @@ def cli(folder_name, title, config_dir):
 
     tex_file.rename(doc_dir/(doc_dir.name+'.tex'))
 
-    click.echo("Folder name:  {folder_name}".format(folder_name=folder_name))
-    click.echo("Title      :  {title}".format(title=title))
+    click.echo("""\
+Your document is located in the directory:
+{0}
+You can now try compiling your document,
+and 'git init' the repository""".format(str(doc_dir)))
+
 
 
 def tex_contents(tex_template, title, date, authors, affiliations,
@@ -181,7 +198,7 @@ def tex_contents(tex_template, title, date, authors, affiliations,
     date_str = "{month} {d.day}, {d.year}".format(month=date.strftime("%B"),
                                                   d=date)
 
-    author_affil_temp = string.Template(r"""\
+    author_affil_temp = string.Template(r"""
     \author{$author}
     \affiliation{$affiliation}""")
 
