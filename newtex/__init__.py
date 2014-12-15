@@ -26,24 +26,38 @@ import string
 import datetime
 import shutil
 import pathlib
-import ntpath
 import distutils.dir_util
 
 
 import click
 import yaml
 
-pkg_dir = path.dirname(__file__)
-
-pkg_config_dir = path.join(pkg_dir, 'newtexrc')
-
-config_dir = path.expanduser('~/newtex')
-
-today = datetime.date.today()
-
 
 def new_path(path_string):
+    """Return pathlib.Path, expanding '~' to a user's HOME directory"""
     return pathlib.Path(path.expanduser(path_string))
+
+
+def copy(src_path, dst_path):
+    shutil.copy(str(src_path), str(dst_path))
+
+
+def copy_tree(src_path, dst_path):
+    """Recursively copy all files and folders from src_path to dst_path"""
+    distutils.dir_util.copy_tree(str(src_path), str(dst_path))
+
+
+def remove(path):
+    """Remove the specified Path"""
+    os.remove(str(path))
+
+pkg_dir = new_path(path.dirname(__file__))
+
+pkg_config_dir = pkg_dir/'newtexrc'
+
+config_dir = new_path('~/newtex')
+
+today = datetime.date.today()
 
 
 default_config = u"""---
@@ -70,27 +84,29 @@ affiliations:
 
 
 def write_file(filename, string):
-    io.open(filename, 'w', encoding="utf-8").write(string)
+    io.open(str(filename), 'w', encoding="utf-8").write(string)
 
 
 def no_config_dir(config_dir, config_file):
     """Create the config path if it doesn't exist."""
-    click.confirm('Setup config directory at ~/newtex?', abort=True)
 
-    if not path.exists(config_dir):
-        distutils.dir_util.copy_tree(pkg_config_dir, config_dir)
+    click.confirm(
+        'Setup config directory at {0}?'.format(str(config_dir)), abort=True)
+
+    if not config_dir.exists():
+        copy_tree(pkg_config_dir, config_dir)
 
     today = datetime.date.today().isoformat()
 
-    write_file(config_file, default_config.format(date=today))
+    write_file(str(config_file), default_config.format(date=today))
 
-    click.echo('Please setup your config file (~/newtex/config.yaml)')
+    click.echo('Please setup your config file\n{0}'.format(str(config_file)))
     raise click.Abort()
 
 
 def check_config(config):
     expected_keys = {'master_bib_file', 'authors', 'affiliations',
-                    'default_style'}
+                     'default_style'}
     for key, val in config.items():
         if val is None:
             raise click.ClickException(
@@ -112,43 +128,48 @@ def check_config(config):
 @click.command()
 @click.option('--folder-name', prompt='What should the folder be called?', type=click.Path(file_okay=False))
 @click.option('--title', prompt="What is the document's title?")
-def cli(folder_name, title):
-    config_file = path.join(config_dir, 'config.yaml')
+@click.option('--config-dir', default=config_dir)
+def cli(folder_name, title, config_dir):
+    config_file = config_dir/'config.yaml'
 
-    if not path.exists(config_dir) or not path.exists(config_file):
+    if not config_dir.exists() or not config_file.exists():
         no_config_dir(config_dir, config_file)
 
-    config = yaml.load(io.open(config_file))
+    config = yaml.load(io.open(str(config_file)))
 
     check_config(config)
 
     # Where to copy all of the files
-    doc_dir = path.abspath(folder_name)
+    doc_dir = new_path(folder_name)
 
-    distutils.dir_util.copy_tree(config_dir, doc_dir)
+    if ' ' in doc_dir.name:
+        raise click.ClickException("Name the folder without spaces")
 
-    os.rename(path.join(doc_dir, 'gitignore'),
-              path.join(doc_dir, '.gitignore'))
+    copy_tree(config_dir, doc_dir)
+
+    remove(doc_dir/'config.yaml')
+
+    (doc_dir/'gitignore').rename(doc_dir/'.gitignore')
 
     # Copy master bib file
-    master_bib_path = path.abspath(config['master_bib_file'])
-    click.echo(master_bib_path)
-    master_bib_filename = ntpath.basename(master_bib_path)
-    shutil.copy(master_bib_path,
-                path.normpath(path.join(doc_dir, 'refs/', master_bib_filename)))
+    master_bib = new_path(config['master_bib_file'])
 
+    copy(master_bib, doc_dir/'refs'/master_bib.name)
 
-    tex_file = path.join(doc_dir, 'template.tex')
+    tex_file = doc_dir/'template.tex'
+    print(tex_file)
     # Use the template to update the tex doc
-    tex_template = string.Template(io.open(tex_file).read())
+    tex_template = string.Template(io.open(str(tex_file)).read())
 
     replaced_tex = tex_contents(tex_template, title=title,
         date=today, authors=config['authors'],
         affiliations=config['affiliations'],
         default_style=config['default_style'],
-        default_bib=master_bib_filename)
+        default_bib=master_bib.name)
 
     write_file(tex_file, replaced_tex)
+
+    tex_file.rename(doc_dir/(doc_dir.name+'.tex'))
 
     click.echo("Folder name:  {folder_name}".format(folder_name=folder_name))
     click.echo("Title      :  {title}".format(title=title))
@@ -158,7 +179,7 @@ def tex_contents(tex_template, title, date, authors, affiliations,
                  default_style, default_bib):
     main_author = authors[0]
     date_str = "{month} {d.day}, {d.year}".format(month=date.strftime("%B"),
-                                                   d=date)
+                                                  d=date)
 
     author_affil_temp = string.Template(r"""\
     \author{$author}
