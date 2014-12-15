@@ -27,7 +27,7 @@ setup(
     packages=['newtex'],
     setup_requires=["setuptools_git >= 0.3"],
     include_package_data=True,
-    install_requires=['click', 'PyYAML'],
+    install_requires=['click', 'PyYAML', 'pathlib'],
     tests_require=['nose>=1.0'],
     test_suite='nose.collector',
     license='MIT',
@@ -36,4 +36,5 @@ setup(
     entry_points="""
         [console_scripts]
         newtex=newtex:cli
+        newtexo=newtex:cli_o
     """,)

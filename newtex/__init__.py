@@ -39,24 +39,50 @@ pkg_config_dir = path.join(pkg_dir, 'newtexrc')
 
 config_dir = path.expanduser('~/newtex')
 
-today = datetime.date.today().isoformat()
+today = datetime.date.today()
+
+
+def new_path(path_string):
+    return pathlib.Path(path.expanduser(path_string))
+
+
+class NewTex(object):
+    def __init__(self):
+        pass
+
+
+@click.command()
+def cli_o():
+    nt = NewTex("hello")
+    click.echo("Hello")
+    def abort():
+        if True:
+            raise click.Abort()
+
+    abort()
+    click.echo("Goodbye")
+
 
 default_config = u"""---
 # newtex config file
 
+
+
 # Uncomment and replace with the path to your default bib file
 # master_bib_file: path/to/master_bib.bib
+
+# Default bibliography style
+# See contents of styles folder for available options
+default_style: naturemag_jm.bst
 
 # Uncomment and correct the authors and affiliations list
 authors:
 #    - Your Name
 #    - John A. Marohn
+# Please include an affiliation for each author
 affiliations:
 #    - Department of Chemistry and Chemical Biology, Ithaca NY 14853
 #    - Department of Chemistry and Chemical Biology, Ithaca NY 14853
-
-# Default bibliography style
-default_style: naturemag_jm.bst
 
 created: {date}
 """
@@ -86,12 +112,12 @@ def check_config(config):
                     'default_style'}
     for key, val in config.items():
         if val is None:
-            raise ctx.ClickException(
+            raise click.ClickException(
                 "The config parameter '{key}' must be specified.".format(
                     key=key))
 
+    keys_okay = True
     for key in expected_keys:
-        keys_okay = True
         if key not in config:
             click.echo('{key} must be specified.'.format(key=key))
             keys_okay = False
@@ -99,14 +125,13 @@ def check_config(config):
     if not keys_okay:
         click.echo(
             "Please fix your config file before proceding")
-        raise ctx.Abort()
+        raise click.Abort()
 
 
 @click.command()
 @click.option('--folder-name', prompt='What should the folder be called?', type=click.Path(file_okay=False))
 @click.option('--title', prompt="What is the document's title?")
-@click.pass_context
-def cli(ctx, folder_name, title):
+def cli(folder_name, title):
     config_file = path.join(config_dir, 'config.yaml')
 
     if not path.exists(config_dir) or not path.exists(config_file):
@@ -138,15 +163,14 @@ def cli(ctx, folder_name, title):
 
     replaced_tex = tex_contents(tex_template, title=title,
         date=today, authors=config['authors'],
-        affiliations=config['affiliations'], default_style=config['default_style'],
+        affiliations=config['affiliations'],
+        default_style=config['default_style'],
         default_bib=master_bib_filename)
 
     write_file(tex_file, replaced_tex)
 
     click.echo("Folder name:  {folder_name}".format(folder_name=folder_name))
     click.echo("Title      :  {title}".format(title=title))
-
-
 
 
 def tex_contents(tex_template, title, date, authors, affiliations,
@@ -165,7 +189,7 @@ def tex_contents(tex_template, title, date, authors, affiliations,
 
     author_affiliation_block = "\n".join(author_affiliation_list)
 
-    return tex_file_template.substitute(
+    return tex_template.substitute(
         title=title,
         main_author=main_author,
         date=date_str,
