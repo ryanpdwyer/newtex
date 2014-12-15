@@ -46,27 +46,10 @@ def new_path(path_string):
     return pathlib.Path(path.expanduser(path_string))
 
 
-class NewTex(object):
-    def __init__(self):
-        pass
-
-
-@click.command()
-def cli_o():
-    nt = NewTex("hello")
-    click.echo("Hello")
-    def abort():
-        if True:
-            raise click.Abort()
-
-    abort()
-    click.echo("Goodbye")
-
-
 default_config = u"""---
 # newtex config file
 
-
+created: {date}
 
 # Uncomment and replace with the path to your default bib file
 # master_bib_file: path/to/master_bib.bib
@@ -83,8 +66,6 @@ authors:
 affiliations:
 #    - Department of Chemistry and Chemical Biology, Ithaca NY 14853
 #    - Department of Chemistry and Chemical Biology, Ithaca NY 14853
-
-created: {date}
 """
 
 

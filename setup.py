@@ -36,5 +36,4 @@ setup(
     entry_points="""
         [console_scripts]
         newtex=newtex:cli
-        newtexo=newtex:cli_o
     """,)
