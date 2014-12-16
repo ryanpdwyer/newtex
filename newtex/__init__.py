@@ -225,6 +225,7 @@ What type is the document? """, type=doc_type_choices)
         master_bib=str(master_bib.absolute()),
         master_bib_name=master_bib.name))
 
+    dropbox = new_path('~/Dropbox')
     large_figs_directory = (dropbox/(doc_dir.name+'__figs')).absolute()
 
     tex_file = doc_dir/'template.tex'
@@ -241,7 +242,6 @@ What type is the document? """, type=doc_type_choices)
     tex_file.rename(doc_dir/doc_name)
 
     inital_git_commit(doc_dir)
-    dropbox = new_path('~/Dropbox')
     create_bare_repo(doc_dir, dropbox)
     mkdir(large_figs_directory)
 
@@ -269,7 +269,7 @@ def tex_contents(tex_template, title, date, authors, affiliations,
         author_affiliation_block=author_affiliation_block,
         default_style=default_style,
         default_bib=default_bib,
-        large_figs_directory=large_figs_directory)
+        large_figs_directory=large_figs_directory+'/')
 
 
 def test_tex_contents():

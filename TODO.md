@@ -4,7 +4,7 @@
 - [x] Add choices for type
 - [x] Add naming rules for folder, filename
 - [x] Add creation of a figs directory
-- [ ] Add includegraphicx to template.tex
+- [x] Add includegraphicx to template.tex
 
 # Medium Priority
 - [x] Add figure to template.tex

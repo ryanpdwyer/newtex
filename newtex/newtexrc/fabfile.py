@@ -9,7 +9,8 @@ from fabric.api import task
 def copy():
     master_bib = "$master_bib"
     dest = "bib/$master_bib_name"
-    shutil.copyfile(str(master_bib.absolute()), str(dest))
+    shutil.copyfile(master_bib, dest)
+    print("Copied {0}".format(master_bib))
 
 
 @task
@@ -42,7 +43,8 @@ def clean():
             '*.fls',
             '*.mp',
             '*.top',
-            '*.tui']
+            '*.tui',
+            '*.pyc']
     to_remove = []
 
     for glob_pattern in globs:
@@ -50,3 +52,5 @@ def clean():
 
     for filename in to_remove:
         os.remove(filename)
+
+    print("Removed aux / compiled files")
