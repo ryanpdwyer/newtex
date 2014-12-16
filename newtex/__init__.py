@@ -27,7 +27,7 @@ import datetime
 import shutil
 import pathlib
 import distutils.dir_util
-
+from fabric.api import local
 
 import click
 import yaml
@@ -127,11 +127,12 @@ def check_config(config):
 
 
 @click.command(help="Create a new LaTeX document with references, etc")
+@click.option('--type', default=None, help="Document type: FP GR GT etc")
 @click.option('--folder-name', default=None, type=click.Path(file_okay=False),
               help="Document folder name; last folder is also doc filename (no spaces)")
 @click.option('--title', default=None, help="Document title")
 @click.option('--config-dir', default=config_dir)
-def cli(folder_name, title, config_dir):
+def cli(folder_name, title, config_dir, type):
 
     # Configuration file setup, checking
     config_file = config_dir/'config.yaml'
@@ -231,6 +232,22 @@ def test_tex_contents():
     open('ex.tex', 'wb').write(
         tex_contents(title, date, authors, affiliations,
                      default_style, default_bib))
+
+
+def create_bare_dropbox_repo(path, dropbox):
+    """Takes an existing git repository at path, creates a corresponding bare
+    Dropbox repository"""
+    path = new_path(path).absolute()
+    repository = path.name
+    dropbox = new_path(dropbox).absolute()
+    git_path = path/'.git'
+    git_dropbox = dropbox/(repository+'.git')
+
+    local("cd {dropbox} && git clone --bare {git_path}".format(
+        dropbox=str(dropbox), git_path=str(git_path)))
+    local("cd {path} && git remote add origin {git_dropbox} && git push -u origin master".format(path=str(path), git_dropbox=str(git_dropbox)))
+
+
 
 from ._version import get_versions
 __version__ = get_versions()['version']
