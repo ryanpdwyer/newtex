@@ -21,21 +21,21 @@ from __future__ import print_function, division, absolute_import
 
 import io
 import os
-from os import path
 import string
 import datetime
 import shutil
 import pathlib
 import distutils.dir_util
-from fabric.api import local
 
 import click
 import yaml
 
+from newtex._git import check_git, inital_git_commit, create_bare_repo
+
 
 def new_path(path_string):
     """Return pathlib.Path, expanding '~' to a user's HOME directory"""
-    return pathlib.Path(path.expanduser(path_string))
+    return pathlib.Path(os.path.expanduser(path_string))
 
 
 def copy(src_path, dst_path):
@@ -47,11 +47,24 @@ def copy_tree(src_path, dst_path):
     distutils.dir_util.copy_tree(str(src_path), str(dst_path))
 
 
+def mkdir(path):
+    os.mkdir(str(path))
+
+
 def remove(path):
-    """Remove the specified Path"""
+    """Remove the specified path"""
     os.remove(str(path))
 
-pkg_dir = new_path(path.dirname(__file__))
+
+def read_file(filename):
+    return io.open(str(filename)).read()
+
+
+def write_file(filename, string):
+    io.open(str(filename), 'w', encoding="utf-8").write(string)
+
+
+pkg_dir = new_path(os.path.dirname(__file__))
 
 pkg_config_dir = pkg_dir/'newtexrc'
 
@@ -83,10 +96,6 @@ affiliations:
 """
 
 
-def write_file(filename, string):
-    io.open(str(filename), 'w', encoding="utf-8").write(string)
-
-
 def no_config_dir(config_dir, config_file):
     """Create the config path if it doesn't exist."""
 
@@ -105,7 +114,7 @@ def no_config_dir(config_dir, config_file):
     raise click.Abort()
 
 
-def check_config(config):
+def verify_config(config):
     expected_keys = {'master_bib_file', 'authors', 'affiliations',
                      'default_style'}
     for key, val in config.items():
@@ -125,24 +134,32 @@ def check_config(config):
             "Please fix your config file before proceding")
         raise click.Abort()
 
+doc_type_choices = click.Choice(['FP', 'GR', 'GT', 'RP', 'MS'])
 
 @click.command(help="Create a new LaTeX document with references, etc")
-@click.option('--type', default=None, help="Document type: FP GR GT etc")
-@click.option('--folder-name', default=None, type=click.Path(file_okay=False),
+@click.option('--doc-type', default=None,
+              help="Document type: FP GR GT etc",
+              type=doc_type_choices)
+@click.option('--destination', default='.', type=click.Path(file_okay=False))
+@click.option('--short-title', default=None, type=click.Path(file_okay=False),
               help="Document folder name; last folder is also doc filename (no spaces)")
 @click.option('--title', default=None, help="Document title")
 @click.option('--config-dir', default=config_dir)
-def cli(folder_name, title, config_dir, type):
+def cli(folder_name, title, config_dir, doc_type, destination):
 
-    # Configuration file setup, checking
+    # Configuration file setup
     config_file = config_dir/'config.yaml'
 
     if not config_dir.exists() or not config_file.exists():
         no_config_dir(config_dir, config_file)
 
-    config = yaml.load(io.open(str(config_file)))
+    config = yaml.load(read_file(config_file))
 
-    check_config(config)
+    verify_config(config)
+
+    last_name = config['authors'][0].split(' ')[-1]
+
+    check_git()
 
     # Handle unset command line arguments
     if folder_name is None:
@@ -151,6 +168,17 @@ def cli(folder_name, title, config_dir, type):
 
     if title is None:
         title = click.prompt("What is the document's title?")
+
+    if doc_type is None:
+        doc_type = click.prompt("""\
+Choices:
+        FP: Flight Plan
+        MS: Manuscript
+        GT: Grant
+        GR: Grant Report
+        RP: Report
+
+What type is the document? """, type=doc_type_choices)
 
     # Actual copying, renaming, inserting into template
 
@@ -172,9 +200,7 @@ def cli(folder_name, title, config_dir, type):
     copy(master_bib, doc_dir/'refs'/master_bib.name)
 
     tex_file = doc_dir/'template.tex'
-    # Use the template to update the tex doc
-    tex_template = string.Template(io.open(str(tex_file)).read())
-
+    tex_template = string.Template(read_file(tex_file))
     replaced_tex = tex_contents(tex_template, title=title,
         date=today, authors=config['authors'],
         affiliations=config['affiliations'],
@@ -185,12 +211,10 @@ def cli(folder_name, title, config_dir, type):
 
     tex_file.rename(doc_dir/(doc_dir.name+'.tex'))
 
-    click.echo("""\
-Your document is located in the directory:
-{0}
-You can now try compiling your document,
-and 'git init' the repository""".format(str(doc_dir)))
-
+    inital_git_commit(doc_dir)
+    dropbox = new_path('~/Dropbox')
+    create_bare_repo(doc_dir, dropbox)
+    mkdir(dropbox/(doc_dir.name+'__figs'))
 
 
 def tex_contents(tex_template, title, date, authors, affiliations,
@@ -233,19 +257,6 @@ def test_tex_contents():
         tex_contents(title, date, authors, affiliations,
                      default_style, default_bib))
 
-
-def create_bare_dropbox_repo(path, dropbox):
-    """Takes an existing git repository at path, creates a corresponding bare
-    Dropbox repository"""
-    path = new_path(path).absolute()
-    repository = path.name
-    dropbox = new_path(dropbox).absolute()
-    git_path = path/'.git'
-    git_dropbox = dropbox/(repository+'.git')
-
-    local("cd {dropbox} && git clone --bare {git_path}".format(
-        dropbox=str(dropbox), git_path=str(git_path)))
-    local("cd {path} && git remote add origin {git_dropbox} && git push -u origin master".format(path=str(path), git_dropbox=str(git_dropbox)))
 
 
 
