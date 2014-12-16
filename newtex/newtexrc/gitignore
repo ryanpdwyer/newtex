@@ -37,9 +37,15 @@
 # ignore Adobe Illustrator
 **.ai
 
-# IGNORE MS WORD
+# Ignore compiled python files
+**.pyc
+**.pyd
+**.pyo
 
+# IGNORE MS WORD
 **.doc
+
+#
 
 # ANNOYING FILES
 

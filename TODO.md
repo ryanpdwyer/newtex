@@ -8,7 +8,7 @@
 
 # Medium Priority
 - [x] Add figure to template.tex
-- [ ] Add cpbib to fabfile.py
+- [x] Add cpbib to fabfile.py
 
 # Low Priority
 - [ ] Switch to purely fab based

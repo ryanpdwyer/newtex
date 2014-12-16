@@ -219,13 +219,22 @@ What type is the document? """, type=doc_type_choices)
 
     copy(master_bib, doc_dir/'bib'/master_bib.name)
 
+    fabfile_template = string.Template(read_file(doc_dir/'fabfile.py'))
+
+    write_file(doc_dir/'fabfile.py', fabfile_template.substitute(
+        master_bib=str(master_bib.absolute()),
+        master_bib_name=master_bib.name))
+
+    large_figs_directory = (dropbox/(doc_dir.name+'__figs')).absolute()
+
     tex_file = doc_dir/'template.tex'
     tex_template = string.Template(read_file(tex_file))
     replaced_tex = tex_contents(tex_template, title=title,
         date=today, authors=config['authors'],
         affiliations=config['affiliations'],
         default_style=config['default_style'],
-        default_bib=master_bib.name)
+        default_bib=master_bib.name,
+        large_figs_directory=str(large_figs_directory))
 
     write_file(tex_file, replaced_tex)
 
@@ -234,11 +243,11 @@ What type is the document? """, type=doc_type_choices)
     inital_git_commit(doc_dir)
     dropbox = new_path('~/Dropbox')
     create_bare_repo(doc_dir, dropbox)
-    mkdir(dropbox/(doc_dir.name+'__figs'))
+    mkdir(large_figs_directory)
 
 
 def tex_contents(tex_template, title, date, authors, affiliations,
-                 default_style, default_bib):
+                 default_style, default_bib, large_figs_directory):
     main_author = authors[0]
     date_str = "{month} {d.day}, {d.year}".format(month=date.strftime("%B"),
                                                   d=date)
@@ -259,7 +268,8 @@ def tex_contents(tex_template, title, date, authors, affiliations,
         date=date_str,
         author_affiliation_block=author_affiliation_block,
         default_style=default_style,
-        default_bib=default_bib)
+        default_bib=default_bib,
+        large_figs_directory=large_figs_directory)
 
 
 def test_tex_contents():

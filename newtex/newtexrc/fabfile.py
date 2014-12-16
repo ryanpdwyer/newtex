@@ -2,14 +2,13 @@
 import glob
 import os
 import shutil
-import pathlib
 from fabric.api import task
 
 
 @task(default=True)
 def copy():
-    master_bib = pathlib.Path("$master_bib")
-    dest = pathlib.Path('bib')/master_bib.name
+    master_bib = "$master_bib"
+    dest = "bib/$master_bib_name"
     shutil.copyfile(str(master_bib.absolute()), str(dest))
 
 
