@@ -7,7 +7,7 @@
 - [ ] Add includegraphicx to template.tex
 
 # Medium Priority
-- [ ] Add figure to template.tex
+- [x] Add figure to template.tex
 - [ ] Add cpbib to fabfile.py
 
 # Low Priority

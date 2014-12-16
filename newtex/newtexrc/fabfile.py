@@ -1,14 +1,28 @@
 # -*- coding: utf-8 -*-
 import glob
 import os
-from fabric.api import local
+import shutil
+import pathlib
+from fabric.api import task
 
 
+@task(default=True)
+def copy():
+    master_bib = pathlib.Path("$master_bib")
+    dest = pathlib.Path('bib')/master_bib.name
+    shutil.copyfile(str(master_bib.absolute()), str(dest))
+
+
+@task
 def help():
-    print("cpbib        copy bib file to refs")
-    print("clean        remove latex intermediate files")
+    print("""\
+Commands:
+
+    copy            copy bib file to refs [default]
+    clean           remove latex intermediate files""")
 
 
+@task
 def clean():
     globs = [
             '*.aux',
@@ -31,8 +45,9 @@ def clean():
             '*.top',
             '*.tui']
     to_remove = []
+
     for glob_pattern in globs:
-        to_remove.append(glob.glob(glob_pattern))
+        to_remove.extend(glob.glob(glob_pattern))
 
     for filename in to_remove:
         os.remove(filename)
