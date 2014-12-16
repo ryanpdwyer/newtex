@@ -1,8 +1,8 @@
 # High Priority
 - [x] Get git portion of the code working
-- [ ] Standardize command line interface to Marohn group new protocol
+- [x] Standardize command line interface to Marohn group new protocol
 - [x] Add choices for type
-- [ ] Add naming rules for folder, filename
+- [x] Add naming rules for folder, filename
 - [x] Add creation of a figs directory
 - [ ] Add includegraphicx to template.tex
 

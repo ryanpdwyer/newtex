@@ -55,8 +55,6 @@
 
 
 % COMMANDS
-\newcommand{\figloc}[1]{./figs/#1}   % Define subdirectory for figs
-\newcommand{\bibloc}[1]{./refs/#1}   % Define subdirectory for bib figures
 \newcommand{\trimcaptionspacing}{\vspace{-0.25in}}      % include in figures to decrease the text-to-figure spacing
 \newcommand{\trimcaptionspacinghalf}{\vspace{-0.10in}}  % include in figures to decrease the text-to-figure spacing
 \def\bibfont{\footnotesize} % Smaller font in the bibliography
@@ -98,13 +96,19 @@ $author_affiliation_block
 \section{Introduction}
 This is the body.
 
+\begin{figure}
+    \label{fig:Example}
+    \includegraphics[width=3.1in]{figs/ex.pdf}
+    \caption{Example figure}
+\end{figure}
+
 
 % =========================
 \def\bibsection{\vspace{6pt}}
 \setlength{\bibsep}{0pt}
 
-\bibliographystyle{styles/$default_style}
+\bibliographystyle{bst/$default_style}
 
-\bibliography{refs/$default_bib}
+\bibliography{bib/$default_bib}
 \label{TheEnd}
 \end{document}

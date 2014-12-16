@@ -110,7 +110,7 @@ def no_config_dir(config_dir, config_file):
     write_file(str(config_file), default_config.format(date=today))
 
     click.echo('Please setup your config file\n{0}'.format(str(config_file)))
-    click.edit(filename=str(config_file))
+    click.launch(str(config_file))
     raise click.Abort()
 
 
@@ -217,7 +217,7 @@ What type is the document? """, type=doc_type_choices)
     # Copy master bib file
     master_bib = new_path(config['master_bib_file'])
 
-    copy(master_bib, doc_dir/'refs'/master_bib.name)
+    copy(master_bib, doc_dir/'bib'/master_bib.name)
 
     tex_file = doc_dir/'template.tex'
     tex_template = string.Template(read_file(tex_file))
