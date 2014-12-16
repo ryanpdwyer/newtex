@@ -134,6 +134,23 @@ def verify_config(config):
             "Please fix your config file before proceding")
         raise click.Abort()
 
+
+def dir_doc_names(doc_type, last_name, date, short_name):
+    """Return properly formatted directory and document names"""
+    dir_name = (
+        "_JAM_{doc_type}__{last_name}{d.year}{d.month}__{short_name}".format(
+            doc_type=doc_type,
+            last_name=last_name,
+            d=date,
+            short_name=short_name))
+
+    doc_name = "{last_name}{d.year}{d.month}__{short_name}.tex".format(
+        last_name=last_name,
+        d=date,
+        short_name=short_name)
+
+    return dir_name, doc_name
+
 doc_type_choices = click.Choice(['FP', 'GR', 'GT', 'RP', 'MS'])
 
 @click.command(help="Create a new LaTeX document with references, etc")
@@ -141,11 +158,11 @@ doc_type_choices = click.Choice(['FP', 'GR', 'GT', 'RP', 'MS'])
               help="Document type: FP GR GT etc",
               type=doc_type_choices)
 @click.option('--destination', default='.', type=click.Path(file_okay=False))
-@click.option('--short-title', default=None, type=click.Path(file_okay=False),
-              help="Document folder name; last folder is also doc filename (no spaces)")
+@click.option('--short-name', default=None, type=click.Path(file_okay=False),
+              help="Short name for document")
 @click.option('--title', default=None, help="Document title")
 @click.option('--config-dir', default=config_dir)
-def cli(folder_name, title, config_dir, doc_type, destination):
+def cli(short_name, title, config_dir, doc_type, destination):
 
     # Configuration file setup
     config_file = config_dir/'config.yaml'
@@ -162,28 +179,31 @@ def cli(folder_name, title, config_dir, doc_type, destination):
     check_git()
 
     # Handle unset command line arguments
-    if folder_name is None:
-        folder_name = click.prompt('What should the folder be called?',
-                                   type=click.Path(file_okay=False))
+    if short_name is None:
+        short_name = click.prompt('Short name for document (2-3 words)?')
+
+    short_name = short_name.replace(' ', '_').replace('-', '_')
 
     if title is None:
         title = click.prompt("What is the document's title?")
 
     if doc_type is None:
         doc_type = click.prompt("""\
-Choices:
-        FP: Flight Plan
-        MS: Manuscript
-        GT: Grant
-        GR: Grant Report
-        RP: Report
+    FP: Flight Plan
+    MS: Manuscript
+    GT: Grant
+    GR: Grant Report
+    RP: Report
 
 What type is the document? """, type=doc_type_choices)
 
     # Actual copying, renaming, inserting into template
 
+    dir_name, doc_name = dir_doc_names(doc_type, last_name, today, short_name)
+
     # Where to copy all of the files
-    doc_dir = new_path(folder_name)
+    destination_dir = new_path(destination)
+    doc_dir = destination_dir/dir_name
 
     if ' ' in doc_dir.name:
         raise click.ClickException("Name the folder without spaces")
@@ -209,7 +229,7 @@ What type is the document? """, type=doc_type_choices)
 
     write_file(tex_file, replaced_tex)
 
-    tex_file.rename(doc_dir/(doc_dir.name+'.tex'))
+    tex_file.rename(doc_dir/doc_name)
 
     inital_git_commit(doc_dir)
     dropbox = new_path('~/Dropbox')
