@@ -252,7 +252,7 @@ What type is the document? """, type=doc_type_choices)
     tex_file.rename(doc_dir/doc_name)
 
     inital_git_commit(doc_dir)
-    create_bare_repo(doc_dir, dropbox)
+    create_bare_repo(doc_dir.absolute(), dropbox.absolute())
     mkdir(large_figs_dir)
 
     bare_repo = str(dropbox/(dir_name+'.git'))

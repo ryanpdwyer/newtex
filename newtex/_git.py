@@ -68,7 +68,7 @@ def create_bare_repo(path, bare_path):
     """Takes an existing git repository at path, creates a corresponding bare
     repository at bare_path """
     repository = path.name
-    git_path = path/'.git'
+    git_path = path.absolute()/'.git'
     git_bare_path = bare_path/(repository+'.git')
 
     bare_path_string = str(bare_path.absolute())
