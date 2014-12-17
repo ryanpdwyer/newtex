@@ -4,25 +4,28 @@
 *.bak
 *.bbl
 *.blg
+*.bst
 *.dvi
+*.fff
 *.fgx
+*.lof
 *.log
+*.lot
+*.mp
 *.out
 *.pdf
-*.synctex.gz
 *.sav
 *.spl
+*.synctex.gz
 *.tbx
+*.toc
+*.top
+*.tui
 *.vdx
 
 # IGNORE Latexmk
 *.fdb_latexmk
 *.fls
-
-
-*.mp
-*.top
-*.tui
 
 # IGNORE MATLAB data and MATHEMATICA and ADOBE ILLUDSTRATOR
 
@@ -30,10 +33,6 @@
 **.asv
 # ignore matlab temporary backup files
 **.m~
-# ignore matlab binary data
-**.mat
-# ignore Mathematica notebook files ...
-**.nb
 # ignore Adobe Illustrator
 **.ai
 
@@ -42,10 +41,15 @@
 **.pyd
 **.pyo
 
-# IGNORE MS WORD
-**.doc
+# IGNORE MICROSOFT FILES
 
-#
+**.xls
+**.xlsx
+**.doc
+**.docx
+**.ppt
+**.pptx
+
 
 # ANNOYING FILES
 
