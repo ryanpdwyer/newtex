@@ -68,8 +68,6 @@ pkg_dir = new_path(os.path.dirname(__file__))
 
 pkg_config_dir = pkg_dir/'newtexrc'
 
-config_dir = new_path('~/newtex')
-
 today = datetime.date.today()
 
 
@@ -159,7 +157,9 @@ def dir_doc_names(doc_type, last_name, date, short_name):
 
     return dir_name, doc_name
 
+
 doc_type_choices = click.Choice(['FP', 'GR', 'GT', 'RP', 'MS'])
+
 
 @click.command(help="Create a new LaTeX document with references, etc")
 @click.option('--doc-type', default=None,
@@ -169,10 +169,12 @@ doc_type_choices = click.Choice(['FP', 'GR', 'GT', 'RP', 'MS'])
 @click.option('--short-name', default=None, type=click.Path(file_okay=False),
               help="Short name for document")
 @click.option('--title', default=None, help="Document title")
-@click.option('--config-dir', default=config_dir)
+@click.option('--config-dir', default='~/newtex_template',
+              type=click.Path(file_okay=False))
 def cli(short_name, title, config_dir, doc_type, destination):
 
     # Configuration file setup
+    config_dir = new_path(config_dir)
     config_file = config_dir/'config.yaml'
 
     if not config_dir.exists() or not config_file.exists():
@@ -234,7 +236,7 @@ What type is the document? """, type=doc_type_choices)
         master_bib_name=master_bib.name))
 
     dropbox = new_path(config.get('dropbox', '~/Dropbox'))
-    large_figs_directory = (dropbox/(doc_dir.name+'__figs')).absolute()
+    large_figs_dir = (dropbox/(doc_dir.name+'__figs')).absolute()
 
     tex_file = doc_dir/'template.tex'
     tex_template = string.Template(read_file(tex_file))
@@ -243,7 +245,7 @@ What type is the document? """, type=doc_type_choices)
                                 affiliations=config['affiliations'],
                                 default_style=config['default_style'],
                                 default_bib=master_bib.name,
-                                large_figs_directory=str(large_figs_directory))
+                                large_figs_dir=str(large_figs_dir))
 
     write_file(tex_file, replaced_tex)
 
@@ -251,11 +253,35 @@ What type is the document? """, type=doc_type_choices)
 
     inital_git_commit(doc_dir)
     create_bare_repo(doc_dir, dropbox)
-    mkdir(large_figs_directory)
+    mkdir(large_figs_dir)
+
+    bare_repo = str(dropbox/(dir_name+'.git'))
+
+    click.echo("""
+To collaborate with others on this document, share the Dropbox folders,
+
+    {bare_repo}
+    {large_figs_dir}
+
+To work on this document, go to:
+
+    {doc_dir}
+
+You should be able to make changes and do:
+
+git commit -a -m "Message"
+git pull    [this will pull from the dropbox bare repository]
+git push    [this will push to the dropbox bare repository]
+""".format(
+        bare_repo=bare_repo,
+        large_figs_dir=str(large_figs_dir),
+        doc_dir=str(doc_dir)))
+
+    click.launch(bare_repo, locate=True)
 
 
 def tex_contents(tex_template, title, date, authors, affiliations,
-                 default_style, default_bib, large_figs_directory):
+                 default_style, default_bib, large_figs_dir):
     main_author = authors[0]
     date_str = "{month} {d.day}, {d.year}".format(month=date.strftime("%B"),
                                                   d=date)
@@ -277,7 +303,7 @@ def tex_contents(tex_template, title, date, authors, affiliations,
         author_affiliation_block=author_affiliation_block,
         default_style=default_style,
         default_bib=default_bib,
-        large_figs_directory=large_figs_directory+'/')
+        large_figs_dir=large_figs_dir+'/')
 
 
 def test_tex_contents():
@@ -294,8 +320,6 @@ def test_tex_contents():
     open('ex.tex', 'wb').write(
         tex_contents(title, date, authors, affiliations,
                      default_style, default_bib))
-
-
 
 
 from ._version import get_versions
