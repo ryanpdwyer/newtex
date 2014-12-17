@@ -79,20 +79,28 @@ default_config = u"""---
 created: {date}
 
 # Uncomment and replace with the path to your default bib file
-# master_bib_file: path/to/master_bib.bib
+# Make sure to put the path in single quotes on windows
+
+#master_bib_file: 'path/to/master_bib.bib'
 
 # Default bibliography style
 # See contents of styles folder for available options
+
 default_style: naturemag_jm.bst
 
 # Uncomment and correct the authors and affiliations list
+# Please include an affiliation for each author
 authors:
 #    - Your Name
 #    - John A. Marohn
-# Please include an affiliation for each author
 affiliations:
-#    - Department of Chemistry and Chemical Biology, Ithaca NY 14853
-#    - Department of Chemistry and Chemical Biology, Ithaca NY 14853
+#    - Department of Chemistry and Chemical Biology, Ithaca, New York 14853
+#    - Department of Chemistry and Chemical Biology, Ithaca, New York 14853
+
+# Dropbox path
+# Only necessary if your Dropbox is in a non-standard location
+
+#dropbox: 'path/to/dropbox'
 """
 
 
@@ -225,17 +233,17 @@ What type is the document? """, type=doc_type_choices)
         master_bib=str(master_bib.absolute()),
         master_bib_name=master_bib.name))
 
-    dropbox = new_path('~/Dropbox')
+    dropbox = new_path(config.get('dropbox', '~/Dropbox'))
     large_figs_directory = (dropbox/(doc_dir.name+'__figs')).absolute()
 
     tex_file = doc_dir/'template.tex'
     tex_template = string.Template(read_file(tex_file))
     replaced_tex = tex_contents(tex_template, title=title,
-        date=today, authors=config['authors'],
-        affiliations=config['affiliations'],
-        default_style=config['default_style'],
-        default_bib=master_bib.name,
-        large_figs_directory=str(large_figs_directory))
+                                date=today, authors=config['authors'],
+                                affiliations=config['affiliations'],
+                                default_style=config['default_style'],
+                                default_bib=master_bib.name,
+                                large_figs_directory=str(large_figs_directory))
 
     write_file(tex_file, replaced_tex)
 
