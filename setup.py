@@ -27,7 +27,7 @@ setup(
     packages=['newtex'],
     setup_requires=["setuptools_git >= 0.3"],
     include_package_data=True,
-    install_requires=['click', 'PyYAML', 'pathlib', 'GitPython', 'fabric'],
+    install_requires=['click', 'PyYAML', 'pathlib', 'fabric'],
     tests_require=['nose>=1.0'],
     test_suite='nose.collector',
     license='MIT',

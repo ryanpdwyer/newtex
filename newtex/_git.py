@@ -26,8 +26,8 @@ if you'd prefer to use PowerShell.""")
         raise click.ClickException("""
 Please set up your name and email address in git by running,
 
-    git config user.name "YOUR NAME"
-    git config user.email "YOUR EMAIL"
+    git config --global user.name "YOUR NAME"
+    git config --global user.email "YOUR EMAIL"
 """)
 
 
