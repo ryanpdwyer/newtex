@@ -37,7 +37,8 @@ def inital_git_commit(path):
     with lcd(path_string):
         local("git init")
         local("git add -A")
-        local("git commit -m 'Initial automatic commit by newtex'")
+        local('git commit -m "Initial automatic commit by newtex"')
+
 
 def create_bare_repo(path, bare_path):
     """Takes an existing git repository at path, creates a corresponding bare
@@ -50,14 +51,14 @@ def create_bare_repo(path, bare_path):
 
     print("cd {0}".format(bare_path_string))
     with lcd(bare_path_string):
-        local("git clone --bare {git_path}".format(
+        local('git clone --bare "{git_path}"'.format(
             git_path=str(git_path.absolute())
         ))
 
     path_string = str(path.absolute())
     print("cd {0}".format(path_string))
     with lcd(path_string):
-        local("git remote add origin {git_bare_path}".format(
+        local('git remote add origin "{git_bare_path}"'.format(
             git_bare_path=str(git_bare_path.absolute())
         ))
         local("git push -u origin master")
