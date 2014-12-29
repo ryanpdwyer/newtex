@@ -5,7 +5,7 @@ from fabric.api import local, lcd
 
 def parse_git_config(raw_config):
     """Return a dict for a string containing git conig --list output"""
-    return dict([line.split('=') for line in raw_config.split('\n')])
+    return dict([line.split('=', 1) for line in raw_config.split('\n')])
 
 
 def check_git():
