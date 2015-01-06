@@ -3,7 +3,27 @@
 import os
 import sys
 
-from setuptools import setup
+try:
+    from setuptools import setup
+except ImportError:
+    import platform
+    print("""\
+You do not have setuptools installed.
+
+Python Information
+
+    Version: {0}
+    Path:    {1}
+
+Install setuptools using,
+
+    pip install setuptools
+
+or see https://pypi.python.org/pypi/setuptools
+
+""".format(platform.python_version(), sys.executable))
+    raise
+
 
 # See https://github.com/warner/python-versioneer
 import versioneer
