@@ -243,8 +243,8 @@ What type is the document? """, type=doc_type_choices)
     replaced_tex = tex_contents(tex_template, title=title,
                                 date=today, authors=config['authors'],
                                 affiliations=config['affiliations'],
-                                default_style=config['default_style'],
-                                default_bib=master_bib.name,
+                                default_style=new_path(config['default_style']).stem,
+                                default_bib=master_bib.stem,
                                 large_figs_dir=str(large_figs_dir))
 
     write_file(tex_file, replaced_tex)
