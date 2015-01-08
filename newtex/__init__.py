@@ -32,6 +32,10 @@ import yaml
 
 from newtex._git import check_git, inital_git_commit, create_bare_repo
 
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
+
 
 def new_path(path_string):
     """Return pathlib.Path, expanding '~' to a user's HOME directory"""
@@ -162,6 +166,34 @@ def dir_doc_names(doc_type, last_name, date, short_name):
 doc_type_choices = click.Choice(['FP', 'GR', 'GT', 'RP', 'MS'])
 
 
+def print_version(ctx, param, value):
+    """Print newtex version at command line.
+    See http://click.pocoo.org/3/options/#callbacks-and-eager-options"""
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo("newtex version {0}".format(__version__))
+    ctx.exit()
+
+default_config_dir = '~/newtex_template'
+
+def reconfigure(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+
+    config_dir = default_config_dir
+
+    # Configuration file setup
+    config_dir = new_path(config_dir)
+    config_file = config_dir/'config.yaml'
+
+    click.confirm(
+        'Reconfigure config directory at {0}?'.format(str(config_dir)), abort=True)
+
+    copy_tree(pkg_config_dir, config_dir)
+
+    ctx.exit()
+
+
 @click.command(help="Create a new LaTeX document with references, etc")
 @click.option('--doc-type', default=None,
               help="Document type: FP GR GT etc",
@@ -170,8 +202,13 @@ doc_type_choices = click.Choice(['FP', 'GR', 'GT', 'RP', 'MS'])
 @click.option('--short-name', default=None, type=click.Path(file_okay=False),
               help="Short name for document")
 @click.option('--title', default=None, help="Document title")
-@click.option('--config-dir', default='~/newtex_template',
+@click.option('--config-dir', default=default_config_dir,
               type=click.Path(file_okay=False))
+@click.option('--version', is_flag=True, callback=print_version,
+              expose_value=False, is_eager=True, help="Print newtex version")
+@click.option('--reconfigure', is_flag=True, callback=reconfigure,
+              expose_value=False, is_eager=True,
+              help="Setup config folder again")
 def cli(short_name, title, config_dir, doc_type, destination):
 
     # Configuration file setup
@@ -322,7 +359,3 @@ def test_tex_contents():
         tex_contents(title, date, authors, affiliations,
                      default_style, default_bib))
 
-
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
