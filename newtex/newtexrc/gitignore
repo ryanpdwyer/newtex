@@ -4,7 +4,7 @@
 *.bak
 *.bbl
 *.blg
-*.bst
+/*.bst
 *.dvi
 *.fff
 *.fgx
@@ -13,7 +13,7 @@
 *.lot
 *.mp
 *.out
-*.pdf
+/*.pdf
 *.sav
 *.spl
 *.synctex.gz
