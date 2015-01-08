@@ -143,16 +143,17 @@ def verify_config(config):
 
 def dir_doc_names(doc_type, last_name, date, short_name):
     """Return properly formatted directory and document names"""
+    yrmonth = date.strftime("%Y%m")
     dir_name = (
-        "_JAM_{doc_type}__{last_name}{d.year}{d.month}__{short_name}".format(
+        "_JAM_{doc_type}__{last_name}{yrmonth}__{short_name}".format(
             doc_type=doc_type,
             last_name=last_name,
-            d=date,
+            yrmonth=yrmonth,
             short_name=short_name))
 
-    doc_name = "{last_name}{d.year}{d.month}__{short_name}.tex".format(
+    doc_name = "{last_name}{yrmonth}__{short_name}.tex".format(
         last_name=last_name,
-        d=date,
+        yrmonth=yrmonth,
         short_name=short_name)
 
     return dir_name, doc_name
@@ -198,14 +199,14 @@ def cli(short_name, title, config_dir, doc_type, destination):
         title = click.prompt("What is the document's title?")
 
     if doc_type is None:
-        doc_type = click.prompt("""\
+        doc_type = click.prompt("""
     FP: Flight Plan
     MS: Manuscript
     GT: Grant
     GR: Grant Report
     RP: Report
 
-What type is the document? """, type=doc_type_choices)
+What type is the document? [FP, MS, GT, GR, RP]""", type=doc_type_choices)
 
     # Actual copying, renaming, inserting into template
 
