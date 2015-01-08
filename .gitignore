@@ -21,6 +21,7 @@ lib64
 # build
 src/
 .eggs/
+MANIFEST
 
 # Installer logs
 pip-log.txt
