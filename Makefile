@@ -16,7 +16,7 @@ ENV_CONDA=$(ENV_PREFIX)/conda
 help:
 	@echo "Helper command for testing and uploading to PyPI"
 
-release: check_version make_env test_install test release delete_env
+release: check_version make_env test_install test upload delete_env
 
 upload:
 	rm -rf dist
