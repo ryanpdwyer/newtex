@@ -11,4 +11,5 @@
 - [x] Add cpbib to fabfile.py
 
 # Low Priority
-- [ ] Switch to purely fab based
+- Switch to purely fab based
+    - Probably not happening; click offers some really nice convenience functions.
