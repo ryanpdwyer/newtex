@@ -5,7 +5,7 @@ CONDA=$(ANACONDA_DIR)/bin/conda
 ENV_DIR=$(ANACONDA_DIR)/envs
 PACKAGE=newtex
 VERSION=$(shell python setup.py --version)
-ENV_NAME="$(PACKAGE)-$(VERSION)"
+ENV_NAME=$(PACKAGE)-$(VERSION)
 PY_VERSION=2.7
 ENV_PREFIX=$(ENV_DIR)/$(ENV_NAME)/bin
 PYTHON=$(ENV_PREFIX)/python
@@ -25,10 +25,10 @@ upload:
 	$(TWINE) upload dist/*
 
 make_env:
-	$(CONDA) create -n $(ENV_NAME) python=$(PY_VERSION) pip
+	$(CONDA) create -n $(ENV_NAME) --yes python=$(PY_VERSION) pip
 
 delete_env:
-	$(CONDA) remove --all -n $(ENV_NAME)
+	$(CONDA) remove --all -n --yes $(ENV_NAME)
 
 test_install:
 	$(ENV_CONDA) install pyYAML
