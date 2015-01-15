@@ -14,9 +14,14 @@ TWINE=$(ENV_PREFIX)/twine
 ENV_CONDA=$(ENV_PREFIX)/conda
 
 help:
-	@echo "Helper command for testing and uploading to PyPI"
+	@echo "Commands:"
+	@echo ""
+	@echo "release  		Test a package and upload it to PyPI"
+	@echo "clean_test		Test the package in a new environment"
 
 release: check_version make_env test_install test upload delete_env
+
+clean_test: make_env test_install test delete_env
 
 upload:
 	rm -rf dist
@@ -25,13 +30,13 @@ upload:
 	$(TWINE) upload dist/*
 
 make_env:
-	$(CONDA) create -n $(ENV_NAME) --yes python=$(PY_VERSION) pip
+	$(CONDA) create --yes -n $(ENV_NAME) python=$(PY_VERSION) pip
 
 delete_env:
-	$(CONDA) remove --all -n --yes $(ENV_NAME)
+	$(CONDA) remove --all --yes -n $(ENV_NAME)
 
 test_install:
-	$(ENV_CONDA) install pyYAML
+	$(CONDA) install --yes -n $(ENV_NAME) pyYAML
 	$(PYTHON) setup.py install
 
 test:
