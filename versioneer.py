@@ -1,30 +1,66 @@
-
-# Version: 0.12
-
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 """
-The Versioneer
-==============
+Versioneer 2
+============
 
-* like a rocketeer, but for versions!
-* https://github.com/warner/python-versioneer
+* Like a rocketeer, but for versions!
+* Based on https://github.com/warner/python-versioneer
 * Brian Warner
 * License: Public Domain
 * Compatible With: python2.6, 2.7, 3.2, 3.3, 3.4, and pypy
+* Edited by Ryan Dwyer
 
-[![Build Status](https://travis-ci.org/warner/python-versioneer.png?branch=master)](https://travis-ci.org/warner/python-versioneer)
+This is a tool for managing a recorded version number in python projects.
+The goal is to remove the tedious and error-prone "update the embedded version
+string" step from your release process. Making a new
+release should be as easy as recording a new tag in your version-control system,
+and maybe making new tarballs.
 
-This is a tool for managing a recorded version number in distutils-based
-python projects. The goal is to remove the tedious and error-prone "update
-the embedded version string" step from your release process. Making a new
-release should be as easy as recording a new tag in your version-control
-system, and maybe making new tarballs.
+## Cookiecutter
 
+* If you got this file using cookiecutter, the manual steps listed below should
+  all be done.
+* Run `git tag 1.0` (for example), and register and upload to PyPI as usual.
 
-## Quick Install
+## Manual Install
 
-* `pip install versioneer` to somewhere to your $PATH
-* run `versioneer-installer` in your source tree: this installs `versioneer.py`
-* follow the instructions below (also in the `versioneer.py` docstring)
+* Copy this file to beside your setup.py
+
+* Add the following to your setup.py:
+
+    import imp
+    fp, pathname, description = imp.find_module('versioneer')
+    try:
+        versioneer = imp.load_module('versioneer', fp, pathname, description)
+    finally:
+        if fp: fp.close()
+
+    versioneer.VCS = 'git'
+    versioneer.versionfile_source = 'src/myproject/_version.py'
+    versioneer.versionfile_build = 'myproject/_version.py'
+    versioneer.tag_prefix = '' # tags are like 1.2.0
+    versioneer.parentdir_prefix = 'myproject-' # dirname like 'myproject-1.2.0'
+
+* Add the following arguments to the setup() call in your setup.py:
+
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
+
+* Now run `python setup.py versioneer`, which will create `_version.py`, and will
+  modify your `__init__.py` (if one exists next to `_version.py`) to define
+  `__version__` (by calling a function from `_version.py`). It will also
+  modify your `MANIFEST.in` to include both `versioneer.py` and the generated
+  `_version.py` in sdist tarballs.
+
+* Commit these changes to your VCS. To make sure you won't forget,
+  `setup.py versioneer` will mark everything it touched for addition.
+
+If you distribute your project through PyPI, then the release process should
+boil down to two steps:
+
+* 1: git tag 1.0
+* 2: python setup.py register sdist upload
 
 ## Version Identifiers
 
@@ -78,7 +114,7 @@ during the "git archive" command. As a result, generated tarballs will
 contain enough information to get the proper version.
 
 
-## Installation
+## Detailed Installation Instructions
 
 First, decide on values for the following configuration variables:
 
@@ -142,7 +178,13 @@ To versioneer-enable your project:
 * 2: add the following lines to the top of your `setup.py`, with the
   configuration values you decided earlier:
 
-        import versioneer
+        import imp
+        fp, pathname, description = imp.find_module('versioneer')
+        try:
+            versioneer = imp.load_module('versioneer', fp, pathname, description)
+        finally:
+            if fp: fp.close()
+        
         versioneer.VCS = 'git'
         versioneer.versionfile_source = 'src/myproject/_version.py'
         versioneer.versionfile_build = 'myproject/_version.py'
@@ -195,13 +237,14 @@ import the top-level `versioneer.py` and run `get_versions()`.
 Both functions return a dictionary with different keys for different flavors
 of the version string:
 
-* `['version']`: condensed tag+distance+shortid+dirty identifier. For git,
-  this uses the output of `git describe --tags --dirty --always` but strips
-  the tag_prefix. For example "0.11-2-g1076c97-dirty" indicates that the tree
-  is like the "1076c97" commit but has uncommitted changes ("-dirty"), and
-  that this commit is two revisions ("-2-") beyond the "0.11" tag. For
-  released software (exactly equal to a known tag), the identifier will only
-  contain the stripped tag, e.g. "0.11".
+* `['version']`: condensed tag+distance+shortid+dirty identifier.
+  This is based on the output of `git describe --tags --dirty --always` but
+  strips the tag_prefix. For example "0.11.post0.dev2+g1076c97-dirty" indicates
+  that the tree is like the "1076c97" commit but has uncommitted changes
+  ("-dirty"), and that this commit is two revisions (".dev2") beyond the "0.11"
+  tag. For released software (exactly equal to a known tag),
+  the identifier will only contain the stripped tag, e.g. "0.11".
+  This version string is always fully PEP440 compliant.
 
 * `['full']`: detailed revision identifier. For Git, this is the full SHA1
   commit id, followed by "-dirty" if the tree contains uncommitted changes,
@@ -214,13 +257,6 @@ developers). `version` is suitable for display in an "about" box or a CLI
 `--version` output: it can be easily compared against release notes and lists
 of bugs fixed in various releases.
 
-In the future, this will also include a
-[PEP-0440](http://legacy.python.org/dev/peps/pep-0440/) -compatible flavor
-(e.g. `1.2.post0.dev123`). This loses a lot of information (and has no room
-for a hash-based revision id), but is safe to use in a `setup.py`
-"`version=`" argument. It also enables tools like *pip* to compare version
-strings and evaluate compatibility constraint declarations.
-
 The `setup.py versioneer` command adds the following text to your
 `__init__.py` to place a basic version in `YOURPROJECT.__version__`:
 
@@ -228,54 +264,32 @@ The `setup.py versioneer` command adds the following text to your
     __version__ = get_versions()['version']
     del get_versions
 
-## Updating Versioneer
+## Updating Versioneer2
 
 To upgrade your project to a new release of Versioneer, do the following:
 
-* install the new Versioneer (`pip install -U versioneer` or equivalent)
-* re-run `versioneer-installer` in your source tree to replace your copy of
+* install the new versioneer2 (`pip install -U versioneer2` or equivalent)
+* re-run `versioneer2installer` in your source tree to replace your copy of
   `versioneer.py`
 * edit `setup.py`, if necessary, to include any new configuration settings
   indicated by the release notes
 * re-run `setup.py versioneer` to replace `SRC/_version.py`
 * commit any changed files
 
-### Upgrading from 0.10 to 0.11
-
-You must add a `versioneer.VCS = "git"` to your `setup.py` before re-running
-`setup.py versioneer`. This will enable the use of additional version-control
-systems (SVN, etc) in the future.
-
-### Upgrading from 0.11 to 0.12
-
-Nothing special.
-
-## Future Directions
-
-This tool is designed to make it easily extended to other version-control
-systems: all VCS-specific components are in separate directories like
-src/git/ . The top-level `versioneer.py` script is assembled from these
-components by running make-versioneer.py . In the future, make-versioneer.py
-will take a VCS name as an argument, and will construct a version of
-`versioneer.py` that is specific to the given VCS. It might also take the
-configuration arguments that are currently provided manually during
-installation by editing setup.py . Alternatively, it might go the other
-direction and include code from all supported VCS systems, reducing the
-number of intermediate scripts.
-
-
-## License
-
-To make Versioneer easier to embed, all its code is hereby released into the
-public domain. The `_version.py` that it creates is also in the public
-domain.
-
 """
 
-import os, sys, re, subprocess, errno
+import os
+import sys
+import re
+import subprocess
+import errno
+import string
+
 from distutils.core import Command
 from distutils.command.sdist import sdist as _sdist
 from distutils.command.build import build as _build
+
+__version__ = '0.1.7'
 
 # these configuration settings will be overridden by setup.py after it
 # imports us
@@ -284,6 +298,9 @@ versionfile_build = None
 tag_prefix = None
 parentdir_prefix = None
 VCS = None
+
+# This is hard-coded for now.
+release_type_string = "post0.dev"
 
 # these dictionaries contain VCS-specific tools
 LONG_VERSION_PY = {}
@@ -327,7 +344,7 @@ LONG_VERSION_PY['git'] = '''
 # that just contains the computed version number.
 
 # This file is released into the public domain. Generated by
-# versioneer-0.12 (https://github.com/warner/python-versioneer)
+# versioneer2-(%(__version__)s) (https://github.com/ryanpdwyer/versioneer2)
 
 # these strings will be replaced by git during git-archive
 git_refnames = "%(DOLLAR)sFormat:%%d%(DOLLAR)s"
@@ -381,7 +398,7 @@ def versions_from_parentdir(parentdir_prefix, root, verbose=False):
             print("guessing rootdir is '%%s', but '%%s' doesn't start with prefix '%%s'" %%
                   (root, dirname, parentdir_prefix))
         return None
-    return {"version": dirname[len(parentdir_prefix):], "full": ""}
+    return {"version": dirname[len(parentdir_prefix):].replace("_2", "+").strip(".egg"), "full": ""}
 
 def git_get_keywords(versionfile_abs):
     # the code embedded in _version.py can just fetch the value of these
@@ -596,7 +613,7 @@ def git_versions_from_vcs(tag_prefix, root, verbose=False):
     full = stdout.strip()
     if tag.endswith("-dirty"):
         full += "-dirty"
-    return {"version": tag, "full": full}
+    return {"version": tag, "full": full, '__version__': __version__}
 
 
 def do_vcs_install(manifest_in, versionfile_source, ipy):
@@ -640,10 +657,10 @@ def versions_from_parentdir(parentdir_prefix, root, verbose=False):
             print("guessing rootdir is '%s', but '%s' doesn't start with prefix '%s'" %
                   (root, dirname, parentdir_prefix))
         return None
-    return {"version": dirname[len(parentdir_prefix):], "full": ""}
+    return {"version": dirname[len(parentdir_prefix):].replace("_", "+").strip(".egg"), "full": ""}
 
 SHORT_VERSION_PY = """
-# This file was generated by 'versioneer.py' (0.12) from
+# This file was generated by 'versioneer.py' (%(__version__)s) from
 # revision-control system data, or from the parent directory name of an
 # unpacked source archive. Distribution tarballs contain a pre-generated copy
 # of this file.
@@ -704,7 +721,7 @@ def get_versions(default=DEFAULT, verbose=False):
     root = get_root()
     versionfile_abs = os.path.join(root, versionfile_source)
 
-    # extract version from first of _version.py, VCS command (e.g. 'git
+    # extract version first from _version.py, VCS command (e.g. 'git
     # describe'), parentdir. This is meant to work for developers using a
     # source checkout, for users of a tarball created by 'setup.py sdist',
     # and for users of a tarball/zipball created by 'git archive' or github's
@@ -717,30 +734,64 @@ def get_versions(default=DEFAULT, verbose=False):
         ver = versions_from_keywords_f(vcs_keywords, tag_prefix)
         if ver:
             if verbose: print("got version from expanded keyword %s" % ver)
-            return ver
+            return rep_by_pep440(ver)
 
     ver = versions_from_file(versionfile_abs)
     if ver:
         if verbose: print("got version from file %s %s" % (versionfile_abs,ver))
-        return ver
+        return rep_by_pep440(ver)
 
     versions_from_vcs_f = vcs_function(VCS, "versions_from_vcs")
     if versions_from_vcs_f:
         ver = versions_from_vcs_f(tag_prefix, root, verbose)
         if ver:
             if verbose: print("got version from VCS %s" % ver)
-            return ver
+            return rep_by_pep440(ver)
 
     ver = versions_from_parentdir(parentdir_prefix, root, verbose)
     if ver:
         if verbose: print("got version from parentdir %s" % ver)
-        return ver
+        return rep_by_pep440(ver)
 
     if verbose: print("got version from default %s" % default)
     return default
 
 def get_version(verbose=False):
     return get_versions(verbose=verbose)["version"]
+
+
+def git2pep440(ver_str):
+    ver_parts = ver_str.split('-')
+    tag = ver_parts[0]
+    if len(ver_parts) == 1:
+        return tag
+    elif len(ver_parts) == 2:
+        commits = 0
+        git_hash = ''
+        dirty = 'dirty'
+    elif len(ver_parts) == 3:
+        commits = ver_parts[1]
+        git_hash = ver_parts[2]
+        dirty=''
+    elif len(ver_parts) == 4:
+        commits = ver_parts[1]
+        git_hash = ver_parts[2]
+        dirty = '.dirty'
+    else:
+        raise Warning("git version string could not be parsed.")
+        return ver_str
+
+    return "{tag}.{release_type_string}{commits}+{git_hash}{dirty}".format(
+        tag=tag,
+        release_type_string=release_type_string,
+        commits=commits,
+        git_hash=git_hash,
+        dirty=dirty)
+
+
+def rep_by_pep440(ver):
+    ver["version"] = git2pep440(ver["version"])
+    return ver
 
 class cmd_version(Command):
     description = "report generated version string"
@@ -778,7 +829,7 @@ if 'cx_Freeze' in sys.modules:  # cx_freeze enabled?
             print("UPDATING %s" % target_versionfile)
             os.unlink(target_versionfile)
             with open(target_versionfile, "w") as f:
-                f.write(SHORT_VERSION_PY % versions)
+                f.write(SHORT_VERSION_PY(version=__version__) % versions)
 
             _build_exe.run(self)
             os.unlink(target_versionfile)
@@ -789,6 +840,7 @@ if 'cx_Freeze' in sys.modules:  # cx_freeze enabled?
                                 "TAG_PREFIX": tag_prefix,
                                 "PARENTDIR_PREFIX": parentdir_prefix,
                                 "VERSIONFILE_SOURCE": versionfile_source,
+                                "__version__": __version__
                                 })
 
 class cmd_sdist(_sdist):
@@ -832,6 +884,7 @@ class cmd_update_files(Command):
                             "TAG_PREFIX": tag_prefix,
                             "PARENTDIR_PREFIX": parentdir_prefix,
                             "VERSIONFILE_SOURCE": versionfile_source,
+                            "__version__": __version__
                             })
 
         ipy = os.path.join(os.path.dirname(versionfile_source), "__init__.py")
