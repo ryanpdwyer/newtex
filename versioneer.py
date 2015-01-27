@@ -284,12 +284,13 @@ import re
 import subprocess
 import errno
 import string
+import io
 
 from distutils.core import Command
 from distutils.command.sdist import sdist as _sdist
 from distutils.command.build import build as _build
 
-__version__ = '0.1.7'
+__version__ = '0.1.10'
 
 # these configuration settings will be overridden by setup.py after it
 # imports us
@@ -355,7 +356,12 @@ tag_prefix = "%(TAG_PREFIX)s"
 parentdir_prefix = "%(PARENTDIR_PREFIX)s"
 versionfile_source = "%(VERSIONFILE_SOURCE)s"
 
-import os, sys, re, subprocess, errno
+import os
+import sys
+import re
+import subprocess
+import errno
+import io
 
 def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False):
     assert isinstance(commands, list)
@@ -398,7 +404,7 @@ def versions_from_parentdir(parentdir_prefix, root, verbose=False):
             print("guessing rootdir is '%%s', but '%%s' doesn't start with prefix '%%s'" %%
                   (root, dirname, parentdir_prefix))
         return None
-    return {"version": dirname[len(parentdir_prefix):].replace("_2", "+").strip(".egg"), "full": ""}
+    return {"version": dirname[len(parentdir_prefix):].replace("_", "+").strip(".egg"), "full": ""}
 
 def git_get_keywords(versionfile_abs):
     # the code embedded in _version.py can just fetch the value of these
@@ -407,7 +413,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = open(versionfile_abs,"r")
+        f = io.open(versionfile_abs, "r", encoding='utf-8')
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -511,7 +517,7 @@ def get_versions(default={"version": "unknown", "full": ""}, verbose=False):
         # versionfile_source is the relative path from the top of the source
         # tree (where the .git directory might live) to this file. Invert
         # this to find the root from __file__.
-        for i in range(len(versionfile_source.split(os.sep))):
+        for i in range(len(versionfile_source.split('/'))):
             root = os.path.dirname(root)
     except NameError:
         return default
@@ -528,7 +534,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = open(versionfile_abs,"r")
+        f = io.open(versionfile_abs, "r", encoding='utf-8')
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -633,7 +639,7 @@ def do_vcs_install(manifest_in, versionfile_source, ipy):
     files.append(versioneer_file)
     present = False
     try:
-        f = open(".gitattributes", "r")
+        f = io.open(".gitattributes", "r", encoding='utf-8')
         for line in f.readlines():
             if line.strip().startswith(versionfile_source):
                 if "export-subst" in line.strip().split()[1:]:
@@ -642,7 +648,7 @@ def do_vcs_install(manifest_in, versionfile_source, ipy):
     except EnvironmentError:
         pass
     if not present:
-        f = open(".gitattributes", "a+")
+        f = io.open(".gitattributes", "a+", encoding='utf-8')
         f.write("%s export-subst\n" % versionfile_source)
         f.close()
         files.append(".gitattributes")
@@ -677,7 +683,7 @@ DEFAULT = {"version": "unknown", "full": "unknown"}
 def versions_from_file(filename):
     versions = {}
     try:
-        with open(filename) as f:
+        with io.open(filename, encoding='utf-8') as f:
             for line in f.readlines():
                 mo = re.match("version_version = '([^']+)'", line)
                 if mo:
@@ -691,7 +697,7 @@ def versions_from_file(filename):
     return versions
 
 def write_to_version_file(filename, versions):
-    with open(filename, "w") as f:
+    with io.open(filename, "w", encoding='utf-8') as f:
         f.write(SHORT_VERSION_PY % versions)
 
     print("set %s to '%s'" % (filename, versions["version"]))
@@ -816,7 +822,7 @@ class cmd_build(_build):
             target_versionfile = os.path.join(self.build_lib, versionfile_build)
             print("UPDATING %s" % target_versionfile)
             os.unlink(target_versionfile)
-            with open(target_versionfile, "w") as f:
+            with io.open(target_versionfile, "w", encoding='utf-8') as f:
                 f.write(SHORT_VERSION_PY % versions)
 
 if 'cx_Freeze' in sys.modules:  # cx_freeze enabled?
@@ -828,12 +834,12 @@ if 'cx_Freeze' in sys.modules:  # cx_freeze enabled?
             target_versionfile = versionfile_source
             print("UPDATING %s" % target_versionfile)
             os.unlink(target_versionfile)
-            with open(target_versionfile, "w") as f:
+            with io.open(target_versionfile, "w", encoding='utf-8') as f:
                 f.write(SHORT_VERSION_PY(version=__version__) % versions)
 
             _build_exe.run(self)
             os.unlink(target_versionfile)
-            with open(versionfile_source, "w") as f:
+            with io.open(versionfile_source, "w", encoding='utf-8') as f:
                 assert VCS is not None, "please set versioneer.VCS"
                 LONG = LONG_VERSION_PY[VCS]
                 f.write(LONG % {"DOLLAR": "$",
@@ -858,7 +864,7 @@ class cmd_sdist(_sdist):
         target_versionfile = os.path.join(base_dir, versionfile_source)
         print("UPDATING %s" % target_versionfile)
         os.unlink(target_versionfile)
-        with open(target_versionfile, "w") as f:
+        with io.open(target_versionfile, "w", encoding='utf-8') as f:
             f.write(SHORT_VERSION_PY % self._versioneer_generated_versions)
 
 INIT_PY_SNIPPET = """
@@ -877,7 +883,7 @@ class cmd_update_files(Command):
         pass
     def run(self):
         print(" creating %s" % versionfile_source)
-        with open(versionfile_source, "w") as f:
+        with io.open(versionfile_source, "w", encoding='utf-8') as f:
             assert VCS is not None, "please set versioneer.VCS"
             LONG = LONG_VERSION_PY[VCS]
             f.write(LONG % {"DOLLAR": "$",
@@ -890,13 +896,13 @@ class cmd_update_files(Command):
         ipy = os.path.join(os.path.dirname(versionfile_source), "__init__.py")
         if os.path.exists(ipy):
             try:
-                with open(ipy, "r") as f:
+                with io.open(ipy, "r", encoding='utf-8') as f:
                     old = f.read()
             except EnvironmentError:
                 old = ""
             if INIT_PY_SNIPPET not in old:
                 print(" appending to %s" % ipy)
-                with open(ipy, "a") as f:
+                with io.open(ipy, "a", encoding='utf-8') as f:
                     f.write(INIT_PY_SNIPPET)
             else:
                 print(" %s unmodified" % ipy)
@@ -911,7 +917,7 @@ class cmd_update_files(Command):
         manifest_in = os.path.join(get_root(), "MANIFEST.in")
         simple_includes = set()
         try:
-            with open(manifest_in, "r") as f:
+            with io.open(manifest_in, "r", encoding='utf-8') as f:
                 for line in f:
                     if line.startswith("include "):
                         for include in line.split()[1:]:
@@ -924,14 +930,14 @@ class cmd_update_files(Command):
         # lines is safe, though.
         if "versioneer.py" not in simple_includes:
             print(" appending 'versioneer.py' to MANIFEST.in")
-            with open(manifest_in, "a") as f:
+            with io.open(manifest_in, "a", encoding='utf-8') as f:
                 f.write("include versioneer.py\n")
         else:
             print(" 'versioneer.py' already in MANIFEST.in")
         if versionfile_source not in simple_includes:
             print(" appending versionfile_source ('%s') to MANIFEST.in" %
                   versionfile_source)
-            with open(manifest_in, "a") as f:
+            with io.open(manifest_in, "a", encoding='utf-8') as f:
                 f.write("include %s\n" % versionfile_source)
         else:
             print(" versionfile_source already in MANIFEST.in")
@@ -940,6 +946,7 @@ class cmd_update_files(Command):
         # .gitattributes to mark _version.py for export-time keyword
         # substitution.
         do_vcs_install(manifest_in, versionfile_source, ipy)
+
 
 def get_cmdclass():
     cmds = {'version': cmd_version,
