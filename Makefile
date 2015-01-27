@@ -37,9 +37,9 @@ clean:
 	rm -rf *.pyo
 
 clean-build:
-        rm -rf build/
-        rm -rf dist/
-        rm -rf *.egg-info
+	rm -rf build/
+	rm -rf dist/
+	rm -rf *.egg-info
 
 release: check-version make-env install-env test-env upload delete-env
 
