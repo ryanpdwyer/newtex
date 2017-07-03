@@ -211,111 +211,118 @@ def reconfigure(ctx, param, value):
               help="Setup config folder again")
 def cli(short_name, title, config_dir, doc_type, destination):
 
-    # Configuration file setup
-    config_dir = new_path(config_dir)
-    config_file = config_dir/'config.yaml'
+    try:
+        # Configuration file setup
+        config_dir = new_path(config_dir)
+        config_file = config_dir/'config.yaml'
 
-    if not config_dir.exists() or not config_file.exists():
-        no_config_dir(config_dir, config_file)
+        if not config_dir.exists() or not config_file.exists():
+            no_config_dir(config_dir, config_file)
 
-    config = yaml.load(read_file(config_file))
+        config = yaml.load(read_file(config_file))
 
-    verify_config(config)
+        verify_config(config)
 
-    last_name = config['authors'][0].split(' ')[-1]
+        last_name = config['authors'][0].split(' ')[-1]
 
-    check_git()
+        check_git()
 
-    # Handle unset command line arguments
-    if short_name is None:
-        short_name = click.prompt('Short name for document (2-3 words)?')
+        # Handle unset command line arguments
+        if short_name is None:
+            short_name = click.prompt('Short name for document (2-3 words)?')
 
-    short_name = short_name.replace(' ', '_').replace('-', '_')
+        short_name = short_name.replace(' ', '_').replace('-', '_')
 
-    if title is None:
-        title = click.prompt("What is the document's title?")
+        if title is None:
+            title = click.prompt("What is the document's title?")
 
-    if doc_type is None:
-        doc_type = click.prompt("""
-    FP: Flight Plan
-    MS: Manuscript
-    GT: Grant
-    GR: Grant Report
-    RP: Report
+        if doc_type is None:
+            doc_type = click.prompt("""
+        FP: Flight Plan
+        MS: Manuscript
+        GT: Grant
+        GR: Grant Report
+        RP: Report
 
-What type is the document? [FP, MS, GT, GR, RP]""", type=doc_type_choices)
+    What type is the document? [FP, MS, GT, GR, RP]""", type=doc_type_choices)
 
-    # Actual copying, renaming, inserting into template
+        # Actual copying, renaming, inserting into template
 
-    dir_name, doc_name = dir_doc_names(doc_type, last_name, today, short_name)
+        dir_name, doc_name = dir_doc_names(doc_type, last_name, today, short_name)
 
-    # Where to copy all of the files
-    destination_dir = new_path(destination)
-    doc_dir = destination_dir/dir_name
+        # Where to copy all of the files
+        destination_dir = new_path(destination)
+        doc_dir = destination_dir/dir_name
 
-    if ' ' in doc_dir.name:
-        raise click.ClickException("Name the folder without spaces")
+        if ' ' in doc_dir.name:
+            raise click.ClickException("Name the folder without spaces")
 
-    copy_tree(config_dir, doc_dir)
+        copy_tree(config_dir, doc_dir)
 
-    remove(doc_dir/'config.yaml')
+        remove(doc_dir/'config.yaml')
 
-    (doc_dir/'gitignore').rename(doc_dir/'.gitignore')
+        (doc_dir/'gitignore').rename(doc_dir/'.gitignore')
 
-    # Copy master bib file
-    master_bib = new_path(config['master_bib_file'])
+        # Copy master bib file
+        master_bib = new_path(config['master_bib_file'])
 
-    copy(master_bib, doc_dir/'bib'/master_bib.name)
+        copy(master_bib, doc_dir/'bib'/master_bib.name)
 
-    fabfile_template = string.Template(read_file(doc_dir/'fabfile.py'))
+        fabfile_template = string.Template(read_file(doc_dir/'fabfile.py'))
 
-    write_file(doc_dir/'fabfile.py', fabfile_template.substitute(
-        master_bib=str(master_bib.absolute()),
-        master_bib_name=master_bib.name))
+        write_file(doc_dir/'fabfile.py', fabfile_template.substitute(
+            master_bib=str(master_bib.absolute()),
+            master_bib_name=master_bib.name))
 
-    dropbox = new_path(config.get('dropbox', '~/Dropbox'))
-    large_figs_dir = (dropbox/(doc_dir.name+'__figs')).absolute()
+        dropbox = new_path(config.get('dropbox', '~/Dropbox'))
+        large_figs_dir = (dropbox/(doc_dir.name+'__figs')).absolute()
 
-    tex_file = doc_dir/'template.tex'
-    tex_template = string.Template(read_file(tex_file))
-    replaced_tex = tex_contents(tex_template, title=title,
-                                date=today, authors=config['authors'],
-                                affiliations=config['affiliations'],
-                                default_style=new_path(config['default_style']).stem,
-                                default_bib=master_bib.stem,
-                                large_figs_dir=str(large_figs_dir))
+        tex_file = doc_dir/'template.tex'
+        tex_template = string.Template(read_file(tex_file))
+        replaced_tex = tex_contents(tex_template, title=title,
+                                    date=today, authors=config['authors'],
+                                    affiliations=config['affiliations'],
+                                    default_style=new_path(config['default_style']).stem,
+                                    default_bib=master_bib.stem,
+                                    large_figs_dir=str(large_figs_dir))
 
-    write_file(tex_file, replaced_tex)
+        write_file(tex_file, replaced_tex)
 
-    tex_file.rename(doc_dir/doc_name)
+        tex_file.rename(doc_dir/doc_name)
 
-    inital_git_commit(doc_dir)
-    create_bare_repo(doc_dir, dropbox)
-    mkdir(large_figs_dir)
 
-    bare_repo = str(dropbox/(dir_name+'.git'))
 
-    click.echo("""
-To collaborate with others on this document, share the Dropbox folders,
+        inital_git_commit(doc_dir)
+        create_bare_repo(doc_dir, dropbox)
+        mkdir(large_figs_dir)
 
-    {bare_repo}
-    {large_figs_dir}
+        bare_repo = str(dropbox/(dir_name+'.git'))
 
-To work on this document, go to:
+        click.echo("""
+    To collaborate with others on this document, share the Dropbox folders,
 
-    {doc_dir}
+        {bare_repo}
+        {large_figs_dir}
 
-You should be able to make changes and do:
+    To work on this document, go to:
 
-git commit -a -m "Message"
-git pull    [this will pull from the dropbox bare repository]
-git push    [this will push to the dropbox bare repository]
-""".format(
-        bare_repo=bare_repo,
-        large_figs_dir=str(large_figs_dir),
-        doc_dir=str(doc_dir)))
+        {doc_dir}
 
-    click.launch(bare_repo, locate=True)
+    You should be able to make changes and do:
+
+    git commit -a -m "Message"
+    git pull    [this will pull from the dropbox bare repository]
+    git push    [this will push to the dropbox bare repository]
+    """.format(
+            bare_repo=bare_repo,
+            large_figs_dir=str(large_figs_dir),
+            doc_dir=str(doc_dir)))
+
+        click.launch(bare_repo, locate=True)
+    except Exception as e:
+        click.echo(e.__doc__)
+        click.echo(e.message)
+        raise e
 
 
 def tex_contents(tex_template, title, date, authors, affiliations,
