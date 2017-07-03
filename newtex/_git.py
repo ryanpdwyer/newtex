@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import click
 from fabric.api import local, lcd
-
+from newtex.util import check_output
 
 def parse_git_config(raw_config):
     """Return a dict for a string containing git conig --list output"""
@@ -34,10 +34,10 @@ Please set up your name and email address in git by running,
 def inital_git_commit(path):
     path_string = str(path.absolute())
     print("cd {0}".format(path_string))
-    with lcd(path_string):
-        local("git init")
-        local("git add -A")
-        local('git commit -m "Initial automatic commit by newtex"')
+    check_output(['git', 'init'], cwd=path_string)
+    check_output(['git', 'add', '-A'], cwd=path_string)
+    check_output(['git', 'commit', '-m', "Initial automatic commit by newtex"],
+                  cwd=path_string)
 
 
 def create_bare_repo(path, bare_path):
@@ -50,15 +50,17 @@ def create_bare_repo(path, bare_path):
     bare_path_string = str(bare_path.absolute())
 
     print("cd {0}".format(bare_path_string))
-    with lcd(bare_path_string):
-        local('git clone --bare "{git_path}"'.format(
-            git_path=str(git_path.absolute())
-        ))
+    check_output(['git', "clone", "--bare",
+                    "{git_path}".format(
+            git_path=str(git_path.absolute()))], cwd=bare_path_string)
+
 
     path_string = str(path.absolute())
     print("cd {0}".format(path_string))
-    with lcd(path_string):
-        local('git remote add origin "{git_bare_path}"'.format(
-            git_bare_path=str(git_bare_path.absolute())
-        ))
-        local("git push -u origin master")
+
+    check_output(["git", "remote", "add", "origin",
+           "{git_bare_path}".format(
+            git_bare_path=str(git_bare_path.absolute()))],
+            cwd=path_string)
+    check_output(["git", "push", "-u", "origin", "master"],
+                      cwd=path_string)
