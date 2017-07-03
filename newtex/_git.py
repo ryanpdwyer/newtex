@@ -1,34 +1,19 @@
 # -*- coding: utf-8 -*-
 import click
-from fabric.api import local, lcd
 from newtex.util import check_output
-
-def parse_git_config(raw_config):
-    """Return a dict for a string containing git conig --list output"""
-    return dict([line.split('=', 1) for line in raw_config.split('\n')])
 
 
 def check_git():
     """Check to see that you have git on your path, and that your email and
     username are correctly configured."""
 
-    version = local("git --version", capture=True)
+    version = check_output(['git', '--version'])[0]
     if 'version' not in version:
         raise click.ClickException(
             """\
 git is not on your PATH; on Windows, try running from Git Bash, or
 reinstalling git and selecting 'Use Git from the Windows Command Prompt'
 if you'd prefer to use PowerShell.""")
-    raw_config = local("""git config --list""", capture=True)
-    dict_config = parse_git_config(raw_config)
-
-    if 'user.name' not in dict_config or 'user.email' not in dict_config:
-        raise click.ClickException("""
-Please set up your name and email address in git by running,
-
-    git config --global user.name "YOUR NAME"
-    git config --global user.email "YOUR EMAIL"
-""")
 
 
 def inital_git_commit(path):
