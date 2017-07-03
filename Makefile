@@ -41,7 +41,7 @@ clean-build:
 	rm -rf dist/
 	rm -rf *.egg-info
 
-release: check-version make-env install-env test-env upload delete-env
+release: make-env install-env test-env upload delete-env
 
 clean-test: make-env install-env test-env delete-env
 
@@ -70,14 +70,14 @@ test-env:
 # Check version string for PEP440 compatibility
 # The regular expression used to do the check is taken from pip
 # See https://github.com/pypa/pip/search?utf8=✓&q=pep440
-PEP440=$(shell [[ $(VERSION) =~ ^v?(\d+)((a|b|c|rc)(\d+))?$$ ]] && echo "yes" || echo "no")
-ifeq (no,$(PEP440))
-check-version:
-	$(error "Not a valid PEP440 version ($(VERSION)). Run git tag and try again.")
-else
-check-version:
-	@echo "Version okay."
-endif
+# PEP440=$(shell [[ $(VERSION) =~ ^v?(\d+)((a|b|c|rc)(\d+))?$$ ]] && echo "yes" || echo "no")
+# ifeq (no,$(PEP440))
+# check-version:
+# 	$(error "Not a valid PEP440 version ($(VERSION)). Run git tag and try again.")
+# else
+# check-version:
+# 	@echo "Version okay."
+# endif
 
 .PHONY: help upload release make-env delete-env install-env test-env check-version clean-test clean-build clean
 
